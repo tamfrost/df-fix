@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.argocd.application.name }}
+  namespace: {{ .Values.argocd.namespace }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ .Values.argocd.application.project }}
+  
+  source:
+    repoURL: {{ required "A valid .Values.argocd.application.source.repoURL is required!" .Values.argocd.application.source.repoURL }}
+    chart: {{ required "A valid .Values.argocd.application.source.chart is required!" .Values.argocd.application.source.chart }}
+    targetRevision: "{{ .Values.argocd.application.source.targetRevision }}"
+    helm:
+      values: |
+        {{- with .Values.argocd.application.source.helm.values }}
+        {{- . | nindent 8 }}
+        {{- end }}
+        github:
+          pullSecret:
+            token: "{{ .Values.argocd.github.token }}"
+  
+  destination:
+    server: {{ .Values.argocd.application.destination.server }}
+    namespace: {{ .Values.argocd.application.destination.namespace | default .Release.Namespace }}
+  
+  syncPolicy:
+    {{- if .Values.argocd.application.syncPolicy.automated }}
+    automated:
+      prune: {{ .Values.argocd.application.syncPolicy.automated.prune }}
+      selfHeal: {{ .Values.argocd.application.syncPolicy.automated.selfHeal }}
+      allowEmpty: {{ .Values.argocd.application.syncPolicy.automated.allowEmpty }}
+    {{- end }}
+    {{- with .Values.argocd.application.syncPolicy.syncOptions }}
+    syncOptions:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.argocd.application.syncPolicy.retry }}
+    retry:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}

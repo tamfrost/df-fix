@@ -1,0 +1,111 @@
+replicaCount: 1
+
+image:
+  repository: ""  # Required: must be set via --set image.repository=...
+  pullPolicy: Always
+  tag: "latest"
+
+github:
+  pullSecret:
+    create: true
+    name: ghcr-secret
+    registry: ""  # Injected from .env: ghcr.io or containers.github.sys
+    username: ""  # Injected from .env
+    token: ""  # Required: must be set via --set github.pullSecret.token=$GITHUB_TOKEN
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+    add:
+    - SETGID
+    - SETUID
+  readOnlyRootFilesystem: false
+  runAsNonRoot: false
+  runAsUser: 0
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: "dspdf.sys.utv"
+      paths:
+        - path: /df-fix(/|$)(.*)
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: df-fix-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment variables
+env:
+  - name: PORT
+    value: "8080"
+  - name: NODE_ENV
+    value: "production"
+  - name: POSTGRES_HOST
+    value: "" # Required: must be set via --set env[0].value=... or in values-sys.yaml/values-com.yaml
+  - name: MONGODB_URL
+    value: "mongodb://admin:password@mongodb.mongodb.svc.cluster.local:27017/df-fix?authSource=admin"
+
+# PostgreSQL configuration (using existing cluster PostgreSQL)
+postgresql:
+  enabled: false
+  # Connection to existing PostgreSQL - update with your actual service name
+  host: postgres.postgres.svc.cluster.local
+  port: 5432
+  auth:
+    username: admin
+    password: password
+    database: df-fix
+
+# MongoDB configuration (using existing cluster MongoDB)
+mongodb:
+  enabled: false
+  # Connection to existing MongoDB - update with your actual service name
+  host: mongodb.mongodb.svc.cluster.local
+  port: 27017
+  auth:
+    username: admin
+    password: password
+    database: df-fix

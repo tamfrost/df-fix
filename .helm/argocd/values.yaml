@@ -1,0 +1,67 @@
+# ArgoCD Application configuration
+argocd:
+  # Namespace where ArgoCD is installed
+  namespace: argocd
+  
+  # GitHub credentials
+  github:
+    registry: ""  # Injected from .env: ghcr.io or containers.github.sys
+    username: ""  # Injected from .env
+    token: ""  # Set with --set argocd.github.token=YOUR_TOKEN
+  
+  # Application settings
+  application:
+    # Name of the ArgoCD application
+    name: df-fix
+    # Namespace where the application will be deployed (defaults to helm release namespace if not specified)
+    namespace: ""
+    # ArgoCD project (use "default" or specify your project)
+    project: default
+    
+    # Helm OCI chart source
+    source:
+      # OCI registry base URL (injected from .env: ghcr.io/tamfrost/df-fix/helm)
+      # Note: Do NOT include oci:// prefix - ArgoCD adds it automatically
+      repoURL: ""
+      # Chart name within the registry (injected from .env: df-fix-app)
+      chart: ""
+      # Chart version - use wildcard to track latest
+      targetRevision: "*"
+      
+      # Helm values overrides (GitHub token injected from .env)
+      helm:
+        values: ""
+    
+    
+    # Destination cluster and namespace
+    destination:
+      # Kubernetes cluster (use "in-cluster" for the same cluster as ArgoCD)
+      server: https://kubernetes.default.svc
+      # Target namespace
+      namespace: default
+    
+    # Sync policy
+    syncPolicy:
+      # Automatically sync when changes are detected
+      automated:
+        # Automatically create namespace if it doesn't exist
+        prune: true
+        # Allow empty resources
+        selfHeal: true
+        # Allow resources to be deleted
+        allowEmpty: false
+      
+      # Sync options
+      syncOptions:
+        - CreateNamespace=true
+        - PrunePropagationPolicy=foreground
+        - PruneLast=true
+        - RespectIgnoreDifferences=false
+      
+      # Retry policy
+      retry:
+        limit: 5
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m

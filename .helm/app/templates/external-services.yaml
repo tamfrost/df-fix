@@ -1,0 +1,32 @@
+{{- if not .Values.postgresql.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    {{- include "df-fix.labels" . | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ .Values.postgresql.host }}
+  ports:
+  - port: {{ .Values.postgresql.port }}
+    targetPort: {{ .Values.postgresql.port }}
+    protocol: TCP
+{{- end }}
+---
+{{- if not .Values.mongodb.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  labels:
+    {{- include "df-fix.labels" . | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ .Values.mongodb.host }}
+  ports:
+  - port: {{ .Values.mongodb.port }}
+    targetPort: {{ .Values.mongodb.port }}
+    protocol: TCP
+{{- end }}

@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "df-fix.fullname" . }}
+  labels:
+    {{- include "df-fix.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "df-fix.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        helm.sh/chart-version: {{ .Chart.Version }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "df-fix.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.github.pullSecret.create }}
+      imagePullSecrets:
+        - name: {{ .Values.github.pullSecret.name }}
+      {{- end }}
+      serviceAccountName: {{ include "df-fix.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ required "A valid .Values.image.repository is required! Use --set image.repository=..." .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.port }}
+          protocol: TCP
+        env:
+        {{- toYaml .Values.env | nindent 8 }}
+        {{- if .Values.postgresql.enabled }}
+        - name: POSTGRES_HOST
+          value: {{ include "df-fix.fullname" . }}-postgresql
+        - name: POSTGRES_USER
+          value: {{ .Values.postgresql.auth.username }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "df-fix.fullname" . }}-postgresql
+              key: password
+        - name: POSTGRES_DB
+          value: {{ .Values.postgresql.auth.database }}
+        {{- end }}
+        {{- if .Values.mongodb.enabled }}
+        - name: MONGODB_HOST
+          value: {{ include "df-fix.fullname" . }}-mongodb
+        - name: MONGODB_USER
+          value: {{ .Values.mongodb.auth.username }}
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "df-fix.fullname" . }}-mongodb
+              key: mongodb-password
+        - name: MONGODB_DB
+          value: {{ .Values.mongodb.auth.database }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /api/v1/ping
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v1/ping
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

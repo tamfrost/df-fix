@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "df-fix.fullname" . }}-crontab
+  labels:
+    {{- include "df-fix.labels" . | nindent 4 }}
+data:
+  monitor.crontab: |
+{{ .Files.Get "monitor.crontab" | indent 4 }}
