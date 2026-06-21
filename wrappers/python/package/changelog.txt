@@ -1,0 +1,8 @@
+0.0.1
+=====
+- first version where averaging is made for each location before calculating the position
+
+0.0.2
+=====
+- faster convergence
+- new error model

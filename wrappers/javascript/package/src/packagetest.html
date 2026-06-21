@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://<namespace>.github.io/df-geofix/geofix.min.js"></script>
+</head>
+<body>
+    geofix
+    <script>
+        geofix.loadGeoFix({silent: false}).then(async geoFixInstance => {
+            const d = await geoFixInstance.loadDirections(0, [2.350128676656633, 48.86129501083692, 13.409665746048544, 52.521323096219966, 13.779348093551762, 45.64638482429674], [90, 225, 315, 2, 2, 2]);
+            const p = await geoFixInstance.getPosition('mean', 0, 0);
+            geoFixInstance.logCompilationTime();
+            geoFixInstance.logVersion();
+            geoFixInstance.logCommitHash();
+            console.log(geoFixInstance.greatCircle(20, 60, 20, 45, 10000));
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/johlun/Desktop/df-lob/**)",
+      "Bash(docker compose *)",
+      "Bash(curl -s http://localhost:8080/)"
+    ]
+  }
+}

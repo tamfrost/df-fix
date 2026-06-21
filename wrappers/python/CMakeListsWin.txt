@@ -1,0 +1,47 @@
+cmake_minimum_required(VERSION 3.16)
+project(pygeo)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+set(CMAKE_BUILD_TYPE release64)
+set(CMAKE_CXX_FLAGS "/DGEOGRAPHICLIB_SHARED_LIB=0 /EHsc")
+
+add_definitions(-DGEOFIX_VERSION="${GEOFIX_VERSION}")
+add_definitions(-DCOMMIT_HASH="${COMMIT_HASH}")
+
+include_directories("C:/include")
+include_directories("../..")
+include_directories("../../include")
+
+add_compile_definitions("PYTHON_MODULE_NAME=pygeo_windows")
+
+include_directories("C:/local/boost_1_77_0")
+
+find_library(GeoLib64 NAMES Geographic.lib PATHS /lib64/GeographicLib)
+find_library(PythonLib NAMES python311.lib PATHS /Python311/libs)
+find_library(BoostPythonLib64 NAMES libboost_python311-vc142-mt-x64-1_77.lib PATHS /lib64/boost)
+
+message(${GeoLib64})
+message(${PythonLib})
+message(${BoostPythonLib64})
+
+add_library(pygeofix SHARED
+        geofixbind.cpp
+        ../../fixlib.cpp
+        ../../src/geolib.cpp
+        ../../src/DfLocation.cpp
+        ../../src/Direction.cpp
+        ../../src/DirectionCollection.cpp
+        ../../src/DirectionCross.cpp
+        ../../src/DirectionCrossCollection.cpp
+        ../../src/GeoLocation.cpp
+        ../../src/LikelihoodTool.cpp
+        ../../src/Logger.cpp
+)
+target_include_directories(pygeofix PUBLIC /Python311/include)
+target_link_libraries(pygeofix ${PythonLib})
+target_link_libraries(pygeofix ${BoostPythonLib64})
+target_link_libraries(pygeofix ${GeoLib64})
+add_custom_command(TARGET pygeofix POST_BUILD COMMAND copy Release\\pygeofix.dll ..\\package\\src\\geofix\\native\\pygeo_windows.pyd)
+
+

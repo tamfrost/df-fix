@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>df-fix</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+        h1 { border-bottom: 2px solid #333; padding-bottom: .4rem; }
+        h2 { margin-top: 2rem; }
+        .badge { display: inline-block; padding: .2rem .6rem; border-radius: 4px; font-size: .8rem; font-weight: bold; }
+        .ok   { background: #d4edda; color: #155724; }
+        .err  { background: #f8d7da; color: #721c24; }
+        .wait { background: #fff3cd; color: #856404; }
+        pre { background: #f4f4f4; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: .85rem; }
+        textarea { width: 100%; box-sizing: border-box; font-family: monospace; font-size: .85rem; padding: .5rem; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: .4rem 1rem; border: none; border-radius: 4px; background: #333; color: #fff; cursor: pointer; font-size: .9rem; }
+        button:hover { background: #555; }
+        .row { display: flex; gap: 1rem; align-items: flex-start; }
+        .col { flex: 1; }
+        ul { padding-left: 1.2rem; }
+        ul li code { background: #f0f0f0; padding: .1rem .3rem; border-radius: 3px; }
+        .section { border: 1px solid #ddd; border-radius: 6px; padding: 1rem 1.2rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+
+<h1>df-fix <span id="wasmBadge" class="badge wait">WASM loading…</span></h1>
+<p>Direction-finding fixpoint library — REST API + WASM</p>
+
+<div class="section">
+    <h2 style="margin-top:0">WASM module</h2>
+    <div class="row">
+        <div class="col">
+            <h3>Exported classes</h3>
+            <ul id="classes"><li><em>loading…</em></li></ul>
+        </div>
+        <div class="col">
+            <h3>Exported functions</h3>
+            <ul id="functions"><li><em>loading…</em></li></ul>
+        </div>
+        <div class="col">
+            <h3>Build info</h3>
+            <div id="buildInfo"><em>loading…</em></div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 style="margin-top:0">Try POST /api/v1/getFix</h2>
+    <p style="margin-top:0;font-size:.9rem">
+        <code>locations</code>: flat [lon₀, lat₀, lon₁, lat₁ …] &nbsp;|&nbsp;
+        <code>directions</code>: [bearing₀…bearingₙ, sigma₀…sigmaₙ] &nbsp;|&nbsp;
+        <code>directionErrorModel</code>: 0 = CIRCULAR
+    </p>
+    <div class="row">
+        <div class="col">
+            <label><strong>Request body</strong></label><br>
+            <textarea id="reqBody" rows="10">{
+  "directionErrorModel": 0,
+  "nDirections": 3,
+  "locations": [
+    2.350128676656633, 48.86129501083692,
+    13.409665746048544, 52.521323096219966,
+    13.779348093551762, 45.64638482429674
+  ],
+  "directions": [90, 225, 315, 2, 2, 2]
+}</textarea>
+            <br><br>
+            <button onclick="callRest()">Call REST API</button>
+            &nbsp;
+            <button onclick="callWasm()">Call WASM</button>
+        </div>
+        <div class="col">
+            <label><strong>Result</strong> <span id="resultBadge"></span></label><br>
+            <pre id="result" style="min-height:200px">—</pre>
+        </div>
+    </div>
+</div>
+
+<script src="/fix.js"></script>
+<script>
+    const wasmBadge  = document.getElementById('wasmBadge');
+    const classesList  = document.getElementById('classes');
+    const funcsList    = document.getElementById('functions');
+    const buildInfoDiv = document.getElementById('buildInfo');
+    const resultPre    = document.getElementById('result');
+    const resultBadge  = document.getElementById('resultBadge');
+
+    let wasmModule = null;
+
+    fixModule().then(M => {
+        wasmModule = M;
+        wasmBadge.textContent = 'WASM ready';
+        wasmBadge.className = 'badge ok';
+
+        // Classes
+        const classes = Object.keys(M).filter(k => !k.startsWith('_') && typeof M[k] === 'function' && k[0] === k[0].toUpperCase());
+        classesList.innerHTML = classes.map(cls => {
+            const methods = M[cls]?.prototype
+                ? Object.getOwnPropertyNames(M[cls].prototype)
+                    .filter(m => m !== 'constructor' && typeof M[cls].prototype[m] === 'function')
+                    .map(m => `<li><code>${m}()</code></li>`).join('')
+                : '';
+            return `<li><code><strong>${cls}</strong></code><ul>${methods}</ul></li>`;
+        }).join('') || '<li>none</li>';
+
+        // Free functions
+        const fns = Object.keys(M).filter(k => !k.startsWith('_') && typeof M[k] === 'function' && k[0] === k[0].toLowerCase());
+        funcsList.innerHTML = fns.map(f => `<li><code>${f}()</code></li>`).join('') || '<li>none</li>';
+
+        // Build info
+        try {
+            const commitHash = M.RFDFGeo.commitHash ?? '—';
+            const buildTime  = M.RFDFGeo.compilationTime ?? '—';
+            buildInfoDiv.innerHTML = `<p><strong>Commit:</strong> ${commitHash}</p><p><strong>Built:</strong> ${buildTime}</p>`;
+        } catch(e) {
+            buildInfoDiv.textContent = 'unavailable';
+        }
+
+    }).catch(err => {
+        wasmBadge.textContent = 'WASM failed';
+        wasmBadge.className = 'badge err';
+        console.error(err);
+    });
+
+    function showResult(data, ok) {
+        resultBadge.textContent = ok ? '200 OK' : 'error';
+        resultBadge.className = 'badge ' + (ok ? 'ok' : 'err');
+        resultPre.textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function callRest() {
+        resultPre.textContent = '…';
+        resultBadge.textContent = '';
+        try {
+            const body = JSON.parse(document.getElementById('reqBody').value);
+            const res  = await fetch('/api/v1/getFix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const json = await res.json();
+            showResult(json, res.ok);
+        } catch(e) {
+            showResult({ error: e.message }, false);
+        }
+    }
+
+    function callWasm() {
+        if (!wasmModule) { alert('WASM module not ready yet'); return; }
+        resultPre.textContent = '…';
+        resultBadge.textContent = '';
+        try {
+            const body       = JSON.parse(document.getElementById('reqBody').value);
+            const errModel   = body.directionErrorModel ?? 0;
+            const nDir       = body.nDirections;
+            const locations  = body.locations;
+            const directions = body.directions;
+
+            const locPtr = wasmModule._malloc(locations.length  * 8);
+            const dirPtr = wasmModule._malloc(directions.length * 8);
+            wasmModule.HEAPF64.set(locations,  locPtr / 8);
+            wasmModule.HEAPF64.set(directions, dirPtr / 8);
+
+            const geo    = new wasmModule.RFDFGeo(0);
+            const result = geo.getFixpoint(errModel, nDir, locPtr, dirPtr);
+            geo.delete();
+            wasmModule._free(locPtr);
+            wasmModule._free(dirPtr);
+
+            showResult(JSON.parse(result), true);
+        } catch(e) {
+            showResult({ error: e.message }, false);
+        }
+    }
+</script>
+</body>
+</html>

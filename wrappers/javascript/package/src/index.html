@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>geofix</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            padding-left: 20px;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 100vw;
+            height: calc(100vh - 120px); /* Account for h1 height */
+            box-sizing: border-box;
+        }
+        
+        #appcontrol {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #applog {
+            width: calc(100% - 20px);
+            /* max-width: 500px; */
+            height: 100%;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background-color: #f9f9f9;
+            font-family: monospace;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>geofix-application (<span id="commithash"></span>, <span id="buildtime"></span>)</h1>
+    <div class="app-container">
+        <div id="appcontrol">
+            <fieldset>
+                <legend>fix type</legend>
+                <label><input id='collectionRadio' type="radio" name="fittype" value="group" checked>group</label></br>
+                <label><input id='collectionRadio' type="radio" name="fittype" value="individual">individual</label>
+            </fieldset>
+            <fieldset style="position: relative">
+                <legend>generate</legend>
+                <!-- examples: <select id="selectdata">
+                    <option value="type1">HF 1</option>
+                    <option value="type2">HF 2</option>
+                    <option value="type3">VHF</option>
+                </select> -->
+                <button id="clipboardCopy">run</button>
+                type: <select id="generatetype">
+                    <option value="normal" selected>normal</option>
+                    <option value="normalpartner">normal partner</option>
+                    <option value="roughpartner">rogue partner</option>
+                    <option value="clipboard">clipboard</option>
+                </select>
+                <span id="fitstatus" style="position: absolute; right: 10px"></span>
+            </fieldset>
+            <!-- <fieldset>
+                <legend>right click data</legend>
+                <select id="selectdata">
+                    <option value="type1">HF 1</option>
+                    <option value="type2">HF 2</option>
+                    <option value="type3">VHF</option>
+                </select></br>
+            </fieldset> -->
+            <!-- <button id="clearmap">clear</button></br> -->
+            <!-- <textarea id="bearinginput" rows="10" cols="75"></textarea> -->
+            <fieldset style="flex: 1;">
+                <legend>map</legend>
+                <direction-map id="directionmap"></direction-map>
+            </fieldset>
+            <!-- <likelihood-map></likelihood-map> -->
+        </div>
+        <div id="applog">
+            <!-- Log content will appear here -->
+        </div>
+    </div>
+</body>
+
+</html>

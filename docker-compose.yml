@@ -1,0 +1,10 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: df-fix-api
+    container_name: df-fix-api
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

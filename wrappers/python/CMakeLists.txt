@@ -1,0 +1,94 @@
+project(pygeo)
+cmake_minimum_required(VERSION 3.16)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_CXX_STANDARD 14)
+
+message(${BUILD_TYPE})
+
+message("BUILD_TYPE: " ${BUILD_TYPE})
+message("COMMIT HASH: " ${COMMIT_HASH})
+message("GEOFIX VERSION: " ${GEOFIX_VERSION})
+
+add_definitions(-DGEOFIX_VERSION="${GEOFIX_VERSION}")
+add_definitions(-DCOMMIT_HASH="${COMMIT_HASH}")
+
+add_compile_definitions("PYTHON_MODULE_NAME=pygeo_${BUILD_TYPE}")
+
+include_directories("../..")
+include_directories("../../include")
+include_directories("/usr/include/eigen3")
+include_directories("/usr/local/include/eigen3")
+include_directories("/usr/include/boost")
+include_directories("/usr/include/boost169")
+include_directories("/usr/include/boost1.78")
+include_directories("/usr/include/python3.6m")
+include_directories("/usr/include/python3.9")
+include_directories("/usr/include/python3.11")
+include_directories("/usr/include/python3.12")
+include_directories("/usr/include/python3.13")
+include_directories("/usr/include/python3.14")
+
+if (${BUILD_TYPE} STREQUAL "fedora43")
+    find_library(GeoLib NAMES GeographicLib)
+    find_library(BoostPythonLib NAMES boost_python314 PATHS /usr/lib64)
+endif()
+
+if (${BUILD_TYPE} STREQUAL "fedora42")
+    find_library(GeoLib NAMES GeographicLib)
+    find_library(BoostPythonLib NAMES boost_python313 PATHS /usr/lib64)
+endif()
+
+if (${BUILD_TYPE} STREQUAL "fedora41")
+    find_library(GeoLib NAMES GeographicLib)
+    find_library(BoostPythonLib NAMES boost_python313 PATHS /usr/lib64)
+endif()
+
+if (${BUILD_TYPE} STREQUAL "fedora40")
+    find_library(GeoLib NAMES GeographicLib)
+    find_library(BoostPythonLib NAMES boost_python312 PATHS /usr/lib64)
+endif()
+
+if (${BUILD_TYPE} STREQUAL "centos7")
+    find_library(GeoLib NAMES Geographic)
+    find_library(BoostPythonLib NAMES boost_python3)
+endif()
+
+if (${BUILD_TYPE} STREQUAL "rocky8")
+    find_library(GeoLib NAMES Geographic)
+    find_library(BoostPythonLib NAMES boost_python36 PATHS /usr/lib64/boost169)
+endif()
+
+if (${BUILD_TYPE} STREQUAL "rocky9")
+    find_library(GeoLib NAMES GeographicLib)
+    find_library(BoostPythonLib NAMES boost_python39 PATHS /usr/lib64/boost1.78)
+endif()
+
+if (${BUILD_TYPE} STREQUAL "debian12")
+    find_library(GeoLib NAMES GeographicLib)
+    find_library(BoostPythonLib NAMES boost_python311 PATHS /usr/lib/x86_64-linux-gnu)
+endif()
+
+# find_library(fixlib NAMES libgeofix_${BUILD_TYPE}.so PATHS "/src/lib/")
+
+message(${GeoLib})
+message(${BoostPythonLib})
+# message(${fixlib})
+
+add_library(pygeo SHARED
+        geofixbind.cpp
+        ../../fixlib.cpp
+        ../../src/geolib.cpp
+        ../../src/DfLocation.cpp
+        ../../src/Direction.cpp
+        ../../src/DirectionCollection.cpp
+        ../../src/DirectionCross.cpp
+        ../../src/DirectionCrossCollection.cpp
+        ../../src/GeoLocation.cpp
+        ../../src/LikelihoodTool.cpp
+        ../../src/Logger.cpp
+)
+target_link_libraries(pygeo ${GeoLib})
+target_link_libraries(pygeo ${BoostPythonLib})
+# target_link_libraries(pygeo ${fixlib})
+add_custom_command(TARGET pygeo POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:pygeo>" ${PROJECT_SOURCE_DIR}/package/src/geofix/native/pygeo_${BUILD_TYPE}.so)
+

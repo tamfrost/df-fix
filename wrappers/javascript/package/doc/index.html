@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>GeoFix</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <link rel="stylesheet" href="FixEstimation.css" />
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">GeoFix</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#summary" id="toc-summary">1. Summary</a></li>
+<li><a href="#directions-and-crosses" id="toc-directions-and-crosses">2.
+Directions and Crosses</a></li>
+<li><a href="#statistics" id="toc-statistics">3. Statistics</a>
+<ul>
+<li><a href="#outlier-exclusion" id="toc-outlier-exclusion">3.1 Outlier
+Exclusion</a></li>
+<li><a href="#average-and-standard-deviation"
+id="toc-average-and-standard-deviation">3.2 Average and Standard
+Deviation</a></li>
+</ul></li>
+<li><a href="#fix-estimate" id="toc-fix-estimate">4. Fix Estimate</a>
+<ul>
+<li><a href="#likelihood-fit" id="toc-likelihood-fit">4.1 Likelihood
+fit</a></li>
+<li><a href="#confidence-ellipse" id="toc-confidence-ellipse">4.2
+Confidence Ellipse</a>
+<ul>
+<li><a href="#ellipse-size-and-tilt"
+id="toc-ellipse-size-and-tilt">4.2.1 Ellipse Size and Tilt</a></li>
+<li><a href="#positioning" id="toc-positioning">4.2.2
+Positioning</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="summary">1. Summary</h1>
+<p>Geofix is a utility software for estimating the location (here called
+a “fix”) of signal source with a radially symmetric transmission pattern
+on the earths surface. This is done by measuring the direction of the
+signal at two or more geographical locations.</p>
+<h1 id="directions-and-crosses">2. Directions and Crosses</h1>
+<p>In the following we consider a perfectly spherical earth. A
+<em>direction</em> is here defined by a bearing with a value between 0°
+and 360° (north is 0° and south 180°) at some location on the sphere
+given by the longitude and latitude coordinates <span
+class="math inline">\((lon,lat)\)</span>. As can be seen in the figure a
+given direction corresponds to a great circle, and also to a plane that
+goes through the center of the earth. The term <em>direction</em> and
+<em>bearing</em> will be used interchangeably.</p>
+<p>The great circles from two directions will cross each other in two
+points, one on the north hemisphere and one on the south. The location
+of the crosses can be calculated by taking the cross product between the
+normal vectors of the planes defined by the great circles since it
+points in the direction of the line that is defined by the planes
+intersection.</p>
+<p>We will call the first cross that one will pass when following the
+great circle in the direction of the bearing the <em>primary</em> cross
+and the other the <em>secondary</em>. Two directions A and B will either
+share their primary cross or not. Or differently formulated, a cross
+will either be primary to both A and B or it will be primary to only one
+of A or B.</p>
+<p><img src="figure1.png" title="bearings" style="width:16cm" /></p>
+<p><em><strong>figure 1</strong> (left): Bearings and crosses. The cross
+on the northern hemisphere is primary to both A and B. (right): A and B
+have different primary crosses.</em></p>
+<p>With a third bearing C there will be 6 crosses. If a bearing shares
+the primary cross with at least one of the other two bearings it will be
+included in the fix estimation described below. If on the other hand
+both of the two other bearings have a different primary cross, the
+bearing is excluded.</p>
+<p><img src="figure2.png" title="bearings" style="width:16cm" /></p>
+<p><em><strong>figure 2</strong> (left): A, B and C all share each
+others primary crosses. (right): C shares primary cross with B but not
+with A.</em></p>
+<!---
+A situation where no bearings share the same cross can occur in case of which no fix estimate will be calculated.
+--->
+<h1 id="statistics">3. Statistics</h1>
+<p>Consider <span class="math inline">\(n\)</span> direction
+measurements with errors <span
+class="math inline">\(\delta_1\pm\epsilon_i,
+...,\delta_n\pm\epsilon_n\)</span> from the same location. Analysis is
+made in order to exclude outliers and to calculate the average direction
+and the standard error.</p>
+<h2 id="outlier-exclusion">3.1 Outlier Exclusion</h2>
+<p>Outliers are identified using a <a
+href="https://en.wikipedia.org/wiki/Kernel_density_estimation">kernel
+density method</a> with a circularly wrapped gaussian kernel with a
+default bandwidth of 4° (this can be configured). Directions outside a
+symmetric interval of 60° (also configurable) surrounding the direction
+of maximum kernel density are excluded from the analysis.</p>
+<p><img src="kernelDensity.png" title="kernel density"
+height="300" /></p>
+<h2 id="average-and-standard-deviation">3.2 Average and Standard
+Deviation</h2>
+<p>The circular mean direction <span class="math inline">\(d\)</span> is
+calculated using vector addition of the included bearings <span
+class="math display">\[
+d=atan2(\sum_{i=1}^{n}\omega_icos(\delta_i),
+\sum_{i=1}^{n}\omega_isin(\delta_i))
+\]</span> where the weights <span
+class="math inline">\(\omega_i\)</span> typically are <span
+class="math inline">\(1/\epsilon_i\)</span> but can also be configured
+to all be equal to 1.</p>
+<p>The circular standard deviation <span
+class="math inline">\(\sigma\)</span> is calculated as <span
+class="math inline">\(\sqrt{-2\ln(R)}\)</span> where <span
+class="math display">\[
+R=\frac{1}{\sum{\omega_i}}\sqrt{\left(
+\sum_{i=1}^{n}\omega_icos(\delta_i) \right)^2 + \left(
+\sum_{i=1}^{n}\omega_isin(\delta_i) \right)^2 }
+\]</span> When all directions are exactly the same <span
+class="math inline">\(R=1\)</span> and <span
+class="math inline">\(\sigma=0\)</span>. A non-zero dispersion in the
+direction measurements will give <span class="math inline">\(0 \le
+R&lt;1\)</span>, and <span class="math inline">\(\sigma\)</span> will
+approach infinity when all directions tend to cancel each other out when
+added.</p>
+<h1 id="fix-estimate">4. Fix Estimate</h1>
+<p>The estimate of the most likely location of a source is in this case
+a school example of a multivariate gaussian maximum likelihood
+estimation. There are tons of literature describing it in detail. Here
+follows a short explanation of the algorithm used in this code.</p>
+<h2 id="likelihood-fit">4.1 Likelihood fit</h2>
+<p>The following model is used. With <span
+class="math inline">\(m\)</span> normally distributed <a
+href="url">direction measurements</a> from locations <span
+class="math inline">\((lon_i,lat_i)\)</span> of a single source located
+at coordinates <span class="math inline">\((\phi,\theta)\)</span>, each
+direction is given by.</p>
+<p><span class="math display">\[
+d_i = f_i(\phi,\theta) + n_i \qquad i=1,2, ..., m
+\]</span></p>
+<p>where <span class="math inline">\(d_i\)</span> is the i’th
+measurement, <span class="math inline">\(n_i\)</span> is an offset due
+to measurement errors and <span
+class="math inline">\(f_i(\phi,\theta)\)</span> is the function that
+gives the direction depending on the source position <span
+class="math inline">\(\phi\)</span> and <span
+class="math inline">\(\theta\)</span>. Note that the function looks
+different depending on the location of the direction measurement. The
+index <span class="math inline">\(i\)</span> on <span
+class="math inline">\(f\)</span> indicates that it implicitly depends
+also on <span class="math inline">\((lon_i,lat_i)\)</span>. In this code
+a C++ library called <a
+href="https://geographiclib.sourceforge.io/">GeographicLib</a> provides
+this <a
+href="https://geographiclib.sourceforge.io/C++/doc/classGeographicLib_1_1Geodesic.html#afdca5eb7c37fa2fecf124aecd6c436fd">function</a>.
+In vector notation this becomes.</p>
+<p><span class="math display">\[
+\textbf{d} = \textbf{f}(\phi,\theta) + \textbf{n}
+\]</span></p>
+<p>We further assume that the offsets (the residuals if you like) <span
+class="math inline">\(n_i=d_i-f_i(\phi,\theta)\)</span> are normally
+distributed with <span
+class="math inline">\(\mathcal{N}(0,\sigma_i^2)\)</span>, with <span
+class="math inline">\(\sigma_i\)</span>’s estimated according to the
+calculation above.</p>
+<p>In a multivariate context the <span class="math inline">\(m\)</span>
+offsets are the components of a <em>single</em> random vector <span
+class="math inline">\(\textbf{n}\)</span> from the multivariate normal
+distribution <span
+class="math inline">\(\mathcal{N}_m(\textbf{0},\boldsymbol{\Sigma})\)</span>
+where <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is the
+covariance matrix with diagonal elements <span
+class="math inline">\(\sigma_i^2\)</span>. We will assume that all
+direction measurements are independent so that all non-diagonal elements
+are zero. Similarly the random vector <span
+class="math inline">\(\textbf{d}\)</span> is to be viewed as a single
+observation of <span class="math inline">\(m\)</span> data points.</p>
+<p>In this gaussian model, given the observation of directions <span
+class="math inline">\(\textbf{d}\)</span>, the likelihood function for
+the source location <span class="math inline">\((\phi,\theta)\)</span>
+is then described by the multivariate normal distribution</p>
+<p><span class="math display">\[
+\mathcal{L}(\phi,\theta|\textbf{d}) =
+\frac{1}{\sqrt{(2\pi)^{m}|\boldsymbol{\Sigma}|}}\exp{\frac{-[\textbf{d}-\textbf{f}(\phi,\theta)]^{T}\boldsymbol{\Sigma}^{-1}[\textbf{d}-\textbf{f}(\phi,\theta)]}{2}}
+\]</span></p>
+<p>The task at hand is to find estimates <span
+class="math inline">\((\hat{\phi},\hat{\theta})\)</span> that maximizes
+this likelihood. A bit of algebra yields that this translates to
+minimizing the function</p>
+<p><span class="math display">\[
+\textbf{N}(\phi,\theta) =
+[\textbf{d}-\textbf{f}(\phi,\theta)]^{T}\boldsymbol{\Sigma}^{-1}[\textbf{d}-\textbf{f}(\phi,\theta)]
+\quad\quad\textrm{(1)}
+\]</span></p>
+<p><span class="math inline">\(\textbf{f}(\phi,\theta)\)</span> is not a
+linear function, but if a first guess <span
+class="math inline">\((\phi_0,\theta_0)\)</span> of the parameters are
+close enough to the actual values that minimizes the function above, an
+iterative procedure will hopefully converge to the optimal values. The
+way to proceed is then to replace <span
+class="math inline">\(\textbf{f}\)</span> around the point <span
+class="math inline">\((\phi_0,\theta_0)\)</span> with its linear
+approximation. If the vector <span
+class="math inline">\((\phi,\theta)\)</span> is denoted <span
+class="math inline">\(\boldsymbol{\Theta}\)</span> we have.</p>
+<p><span class="math display">\[
+\textbf{f}(\boldsymbol{\Theta}) = \boldsymbol{f}(\boldsymbol{\Theta}_0)
++ \textbf{J}(\boldsymbol{\Theta}-\boldsymbol{\Theta}_0)
+\quad\quad\textrm{(2)}
+\]</span></p>
+<p>with the <span class="math inline">\(m \times 2\)</span> Jacobian
+matrix</p>
+<p><span class="math display">\[
+\textbf{J} =
+\begin{bmatrix}
+{\partial f_1}/{\partial \phi}|_{\phi=\phi_0} &amp; {\partial
+f_1}/{\partial \theta}|_{\theta=\theta_0} \\
+{\partial f_2}/{\partial \phi}|_{\phi=\phi_0} &amp; {\partial
+f_2}/{\partial \theta}|_{\theta=\theta_0} \\
+\vdots &amp; \vdots \\
+{\partial f_m}/{\partial \phi}|_{\phi=\phi_0} &amp; {\partial
+f_m}/{\partial \theta}|_{\theta=\theta_0} \\
+\end{bmatrix}
+\]</span></p>
+<p>Combining the equations above and setting the derivative of <span
+class="math inline">\(\textbf{N}(\boldsymbol{\Theta})\)</span> to <span
+class="math inline">\(\textbf{0}\)</span> and solving for the optimal
+value <span class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span>
+gives</p>
+<p><span class="math display">\[
+\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J}\hat{\boldsymbol{\Theta}}
+=
+\textbf{J}^T\boldsymbol{\Sigma}^{-1}(\textbf{d}-\textbf{f}(\boldsymbol{\Theta}_0)+\textbf{J}\boldsymbol{\Theta}_0)
+\quad\quad\textrm{(3)}
+\]</span> or</p>
+<p><span class="math display">\[
+\hat{\boldsymbol{\Theta}} = \boldsymbol{\Theta}_0 +
+(\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}
+\textbf{J}^T\boldsymbol{\Sigma}^{-1}(\textbf{d}-\textbf{f}(\boldsymbol{\Theta}_0))
+\quad\quad\textrm{(4)}
+\]</span></p>
+<p>With a linear function <span class="math inline">\(f\)</span> this
+would be the optimal estimate of the fix location. But with non-linear
+terms the iterative procedure (Gauss-Newton in this case) then goes:</p>
+<ul>
+<li>guess the fix location <span
+class="math inline">\(\boldsymbol{\Theta}_0\)</span> and calculate what
+the exact directions <span
+class="math inline">\(\textbf{f}(\boldsymbol{\Theta}_0)\)</span> would
+be</li>
+<li>take the difference between that and the measured directions: <span
+class="math inline">\(\textbf{d}-\textbf{f}(\boldsymbol{\Theta}_0)\)</span></li>
+<li>get an improved estimate <span
+class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span> by modifying
+the initial guess <span
+class="math inline">\(\boldsymbol{\Theta}_0\)</span> with <span
+class="math inline">\((\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}
+\textbf{J}^T\boldsymbol{\Sigma}^{-1}(\textbf{d}-\textbf{f}(\boldsymbol{\Theta}_{0}))\)</span></li>
+<li>start over using the improved estimate as the new guess</li>
+<li>repeat until the difference <span
+class="math inline">\(\textbf{d}-\textbf{f}(\boldsymbol{\Theta}_0)\)</span>
+is small enough</li>
+</ul>
+<h2 id="confidence-ellipse">4.2 Confidence Ellipse</h2>
+<p>The parameter estimate <span
+class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span> is also a
+random variable. Imagine doing many repeated direction measurements of a
+fixed source with the the exact same accuracy (<span
+class="math inline">\(\sigma_i\)</span>) every time, and then
+calculating <span
+class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span> with the
+procedure described above. The value will vary from time to time with a
+standard deviation around some mean value of which <span
+class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span> is an
+estimate.</p>
+<p>From eq 4 it can be seen that <span
+class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span> is a linear
+combination of the measured directions <span
+class="math inline">\(\textbf{d}\)</span>, which is also the only random
+variable on the right side of the equation (assumed normally distributed
+as mentioned above).</p>
+<p><span class="math display">\[
+\hat{\boldsymbol{\Theta}} =
+(\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{d}
++ \textrm{non-random terms}
+\quad\quad\textrm{(5)}
+\]</span></p>
+<p>Applying <a
+href="https://en.wikipedia.org/wiki/Propagation_of_uncertainty#Linear_combinations">error
+propagation</a> of the covariance matrix <span
+class="math inline">\(\boldsymbol{\Sigma}\)</span> to this linear
+combination one then gets for the covariance matrix of <span
+class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span>.</p>
+<p><span class="math display">\[
+\begin{split}
+\boldsymbol{\Sigma}_{\hat{{\boldsymbol{\Theta}}}}
+&amp;=
+[(\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}\textbf{J}^T\boldsymbol{\Sigma}^{-1}]
+\boldsymbol{\Sigma}
+[(\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}\textbf{J}^T\boldsymbol{\Sigma}^{-1}]^T
+\\
+&amp;= (\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}\textbf{J}^T
+[(\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}\textbf{J}^T\boldsymbol{\Sigma}^{-1}]^T
+\\
+&amp;= (\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}
+[(\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J}]^T
+\\
+&amp;= (\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}
+\end{split}
+\]</span></p>
+<p>So <span class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span> is
+locally bi-variat normally distributed with the covariance matrix <span
+class="math inline">\(\boldsymbol{\Sigma}_{\hat{{\boldsymbol{\Theta}}}}
+= (\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}\)</span>. This
+means that the scalar quadratic form <span
+class="math inline">\(\hat{\boldsymbol{\Theta}}^T\boldsymbol{\Sigma}_{\hat{{\boldsymbol{\Theta}}}}^{-1}\hat{\boldsymbol{\Theta}}\)</span>
+is <span class="math inline">\(\chi^2_2\)</span>-distributed (the square
+of a normally distributed random variable is <span
+class="math inline">\(\chi^2\)</span> distributed).</p>
+<p>An <span class="math inline">\(\alpha\)</span>% confidence interval
+in the <span class="math inline">\((\phi,\theta)\)</span>-plane is then
+locally defined by</p>
+<p><span class="math display">\[
+\begin{bmatrix}
+\phi &amp; \theta
+\end{bmatrix}
+\begin{bmatrix}
+\sigma_{\hat{\phi}^2} &amp; cov(\hat{\phi},\hat{\theta}) \\
+cov(\hat{\phi},\hat{\theta}) &amp; \sigma_{\hat{\theta}^2} \\
+\end{bmatrix}^{-1}
+\begin{bmatrix}
+\phi \\
+\theta
+\end{bmatrix}
+\le \chi^2_2(\alpha)
+\quad\quad\textrm{(6)}
+\]</span></p>
+<p>Where <span class="math inline">\(\sigma_{\hat{\phi}^2}\)</span>,
+<span class="math inline">\(\sigma_{\hat{\theta}^2}\)</span> and <span
+class="math inline">\(cov(\hat{\phi},\hat{\theta})\)</span> are
+identified as the components of <span
+class="math inline">\(\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J}\)</span>,
+and <span class="math inline">\(\chi^2_2(\alpha)\)</span> means the
+value where the cumulative <span
+class="math inline">\(\chi^2_2\)</span>-distribution equals <span
+class="math inline">\(\alpha/100\)</span>.</p>
+<p>The boundary of this interval defines a tilted ellipse in the <span
+class="math inline">\((\phi,\theta)\)</span>-plane.</p>
+<h3 id="ellipse-size-and-tilt">4.2.1 Ellipse Size and Tilt</h3>
+<p>The cumulative distribution for <span
+class="math inline">\(\chi^2_2\)</span> is given by <span
+class="math inline">\(1-e^{-x/2}\)</span>, meaning that you need a value
+of at least</p>
+<p><span class="math display">\[\chi^2_2 =
+-2\ln{(1-\alpha)}\]</span></p>
+<p>in order for <span class="math inline">\(\alpha\)</span>% of the
+distribution to be included in that interval.</p>
+<p>Since the covariance matrix is symmetric it has orthogonal
+eigenvectors. Diagonalizing <span
+class="math inline">\(\boldsymbol{\Sigma}_{\hat{{\boldsymbol{\Theta}}}}\)</span>
+therefore provides a simpler version of equation 6 for the border of the
+confidence interval.</p>
+<p><span class="math display">\[
+\begin{bmatrix}
+\omega_1 &amp; \omega_2
+\end{bmatrix}
+\begin{bmatrix}
+\lambda_1^{-1} &amp; 0 \\
+0 &amp; \lambda_2^{-1} \\
+\end{bmatrix}
+\begin{bmatrix}
+\omega_1 \\
+\omega_2
+\end{bmatrix}
+= \frac{\omega^{2}_1}{\lambda_1} + \frac{\omega^{2}_2}{\lambda_2}
+= -2\ln{(1-\alpha)}
+\quad\quad\textrm{(7)}
+\]</span></p>
+<p>Where <span class="math inline">\(\omega_1\)</span> and <span
+class="math inline">\(\omega_2\)</span> are the components of <span
+class="math inline">\(\hat{\boldsymbol{\Theta}}\)</span> in the rotated
+coordinate system defined by the eigenvectors of <span
+class="math inline">\(\boldsymbol{\Sigma}_{\boldsymbol{\Theta}}\)</span>
+with eigenvalues <span class="math inline">\(\lambda_1\)</span> and
+<span class="math inline">\(\lambda_2\)</span>. So equation 7 defines an
+ellipse with axis lengths</p>
+<p><span
+class="math display">\[\omega_{1,2}=2\sqrt{-2\lambda_{1,2}\ln(1-\alpha)}\]</span></p>
+<p>The coordinate system is rotated by an angle <span
+class="math inline">\(acos(\omega_1)\)</span> with respect to the <span
+class="math inline">\((\phi,\theta)\)</span>-system.</p>
+<h3 id="positioning">4.2.2 Positioning</h3>
+<p><img src="figure4.png" title="bearings" style="width:16cm" /></p>
+<p><em><strong>figure 4</strong> Positioning of the confidence
+ellipse</em></p>
+<!---
+For each iteration the parameter estimate $\hat{\boldsymbol{\Theta}}$ is thus shifted by an amount ${\Delta}\boldsymbol{\Theta} = \hat{\boldsymbol{\Theta}} - \boldsymbol{\Theta}_0$ which by eq 4 becomes
+
+$$
+{\Delta}\boldsymbol{\Theta} = (\textbf{J}^T\boldsymbol{\Sigma}^{-1}\textbf{J})^{-1}
+\textbf{J}^T\boldsymbol{\Sigma}^{-1}{\Delta}\textbf{d}
+\quad\quad\textrm{(5)}
+$$
+where ${\Delta}\textbf{d}$ is the amount the direction would be shifted if the estimate was the true value. This equation can be regarded as an error propagation from the uncertainty in direction measurement to the uncertainty in the parameter estimate. Imagine doing many repeated direction measurements of a fixed source with the the exact same accuracies ($\sigma_i$'s) every time and se how much the calculated parameter estimates vary.
+--->
+<hr />
+<p><em>commit</em>: –commitsha–</p>
+</body>
+</html>

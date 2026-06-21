@@ -1,0 +1,73 @@
+### df-fix REST API tests
+
+@baseUrl = http://localhost:8080/api/v1
+
+### Test 1: Basic fix — Paris, Berlin, Trieste bearings
+POST {{baseUrl}}/getFix
+Content-Type: application/json
+
+{
+  "directionErrorModel": 0,
+  "nDirections": 3,
+  "locations": [
+    2.350128676656633, 48.86129501083692,
+    13.409665746048544, 52.521323096219966,
+    13.779348093551762, 45.64638482429674
+  ],
+  "directions": [90, 225, 315, 2, 2, 2]
+}
+
+### Test 2: Two directions only (minimal fix)
+POST {{baseUrl}}/getFix
+Content-Type: application/json
+
+{
+  "directionErrorModel": 0,
+  "nDirections": 2,
+  "locations": [
+    2.350128676656633, 48.86129501083692,
+    13.409665746048544, 52.521323096219966
+  ],
+  "directions": [90, 225, 5, 5]
+}
+
+### Test 3: Four directions
+POST {{baseUrl}}/getFix
+Content-Type: application/json
+
+{
+  "directionErrorModel": 0,
+  "nDirections": 4,
+  "locations": [
+    2.350128676656633,  48.86129501083692,
+    13.409665746048544, 52.521323096219966,
+    13.779348093551762, 45.64638482429674,
+    -0.127758,          51.507351
+  ],
+  "directions": [90, 225, 315, 95, 2, 2, 2, 3]
+}
+
+### Test 4: MEAN_OF_SIGMA error model (directionErrorModel: 1)
+POST {{baseUrl}}/getFix
+Content-Type: application/json
+
+{
+  "directionErrorModel": 1,
+  "nDirections": 3,
+  "locations": [
+    2.350128676656633, 48.86129501083692,
+    13.409665746048544, 52.521323096219966,
+    13.779348093551762, 45.64638482429674
+  ],
+  "directions": [90, 225, 315, 2, 2, 2]
+}
+
+### Test 5: Bad request — missing nDirections
+POST {{baseUrl}}/getFix
+Content-Type: application/json
+
+{
+  "directionErrorModel": 0,
+  "locations": [2.35, 48.86, 13.41, 52.52],
+  "directions": [90, 225, 2, 2]
+}

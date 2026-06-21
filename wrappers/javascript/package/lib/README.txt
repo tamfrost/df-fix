@@ -1,0 +1,1 @@
+wasm lib should be moved here in the build process

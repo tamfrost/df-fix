@@ -1,0 +1,58 @@
+{
+  "name": "@namespace/geofix",
+  "version": "1.0.0",
+  "description": "A library for calculating geographical bearings and crosses",
+  "exports": {
+    ".": "./index.js"
+  },
+  "repository": "https://github.sys/FRA/df-geofix.git",
+  "bin": {
+    "@namespace/geofix": "server.js",
+    "geofix-test": "./test/run.js",
+    "geofix-runserver": "server.js"
+  },
+  "scripts": {
+    "dev": "webpack serve",
+    "devserve": "webpack serve --env server=start",
+    "serve": "nodemon server.js",
+    "build": "webpack",
+    "build-wasm-linux": ". ../../../scripts/build-wasm.sh",
+    "test": "jest",
+    "publicate": "node .scripts/publish.js geofix",
+    "installate": "node .scripts/preinstall.js && npm install && node .scripts/postinstall.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "d3": "^7.9.0",
+    "d3-geo": "^3.1.1",
+    "d3-geo-zoom": "^1.5.3",
+    "esm": "^3.2.25",
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.3",
+    "log4js": "^6.9.1",
+    "topojson": "^3.0.2",
+    "ws": "^8.18.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "dockerode": "^4.0.5",
+    "html-webpack-plugin": "^5.6.3",
+    "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "node-fetch": "^3.3.2",
+    "nodemon": "^3.1.9",
+    "rimraf": "^6.0.1",
+    "shelljs": "^0.9.2",
+    "simple-git": "^3.27.0",
+    "terser-webpack-plugin": "^5.3.14",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.2",
+    "webpack": "^5.98.0",
+    "webpack-bundle-analyzer": "^4.10.2",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.1"
+  }
+}

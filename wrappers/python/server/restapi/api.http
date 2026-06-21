@@ -1,0 +1,8 @@
+POST http://localhost:57070/api/v1/getFixPoint
+content-type: application/json
+
+{
+    "siteCoordinates": [2.350128676656633, 48.86129501083692, 13.409665746048544, 52.521323096219966, 13.779348093551762, 45.64638482429674],
+    "bearings": [90, 225, 315],
+    "bearingErrors": [2, 2, 2]
+}
