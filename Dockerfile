@@ -58,7 +58,7 @@ RUN npm run build
 # Output: /app/public/demo/ (path.join(__dirname, '../../public/demo'))
 
 # ── Native build ──────────────────────────────────────────────────────────────
-FROM alpine:3.18 AS builder
+FROM alpine:3.17 AS builder
 
 # Switch repos to HTTP (corporate SSL inspection proxy)
 RUN sed -i 's|https://|http://|g' /etc/apk/repositories
