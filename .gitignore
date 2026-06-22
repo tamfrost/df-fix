@@ -1,3 +1,4 @@
+node_modules
 .env
 
 # Build directories
@@ -25,3 +26,5 @@ Makefile
 *.swp
 *.swo
 *~
+.claude/settings.json
+.claude/settings.json

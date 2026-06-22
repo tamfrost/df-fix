@@ -1,25 +1,26 @@
-const moduleGenerator = require('../lib/libgeofix_javascript');
+// const moduleGenerator = require('../lib/libgeofix_javascript');
+const moduleGenerator = require('../lib/fix');
 
 const globalObject = typeof window === 'undefined' ? global : window;
 
 class GeoFix {
 
-    constructor(config, geoModule) {
-        this.geoModule = geoModule;
-        this.rfdfGeo = new geoModule.RFDFGeo(config.silent ? 0 : 1);
-        this.commitHash = geoModule.RFDFGeo.commitHash;
-        this.compilationTime = geoModule.RFDFGeo.compilationTime;
+    constructor(config, fixModule) {
+        this.fixModule = fixModule;
+        this.rfdfGeo = new fixModule.RFDFGeo(config.silent ? 0 : 1);
+        this.commitHash = fixModule.RFDFGeo.commitHash;
+        this.compilationTime = fixModule.RFDFGeo.compilationTime;
     }
 
     emArray(array) {
-        const ptr = this.geoModule._malloc(array.length * 64);
-        (new Float64Array(this.geoModule.HEAPU8.buffer, ptr, array.length)).set(array);
+        const ptr = this.fixModule._malloc(array.length * 64);
+        (new Float64Array(this.fixModule.HEAPU8.buffer, ptr, array.length)).set(array);
         return ptr;
     }
 
     emString(string) {
-        const ptr = this.geoModule._malloc(string.length * 8);
-        (new Float64Array(this.geoModule.HEAPU8.buffer, ptr, string.length)).set(string);
+        const ptr = this.fixModule._malloc(string.length * 8);
+        (new Float64Array(this.fixModule.HEAPU8.buffer, ptr, string.length)).set(string);
         return ptr;
     }
 
@@ -40,7 +41,7 @@ class GeoFix {
         } catch (error) {
             reject('WASM individual fix calculation crashed!')
         }
-        // return this.geoModule.UTF8ToString(this.rfdfGeo.getFixpoint(Number.parseInt(errorModel), directions.length / 2, this.emArray(locations), this.emArray(directions)));
+        // return this.fixModule.UTF8ToString(this.rfdfGeo.getFixpoint(Number.parseInt(errorModel), directions.length / 2, this.emArray(locations), this.emArray(directions)));
         // return new Promise((resolve, reject) => {
         //     globalObject.getFixpointResolver = resolve;
         //     this.rfdfGeo.getFixpoint(Number.parseInt(errorModel), directions.length / 2, this.emArray(locations), this.emArray(directions));
@@ -99,26 +100,26 @@ class GeoFix {
         return new Promise((resolve, reject) => {
             const globalObject = self;
             globalObject.calculateLikelihoodResolver = resolve;
-            const bufferAddr = this.geoModule._malloc(jsonInput.length + 1);
-            this.geoModule.stringToUTF8(jsonInput, bufferAddr, jsonInput.length + 1);
-            this.geoModule.calculateLikelihood(bufferAddr);
+            const bufferAddr = this.fixModule._malloc(jsonInput.length + 1);
+            this.fixModule.stringToUTF8(jsonInput, bufferAddr, jsonInput.length + 1);
+            this.fixModule.calculateLikelihood(bufferAddr);
         })
     }
 
     greatCircle(nPoints, lat, lon, direction, distance) {
-        return JSON.parse(this.geoModule.greatCircle(nPoints, lat, lon, direction, distance));
+        return JSON.parse(this.fixModule.greatCircle(nPoints, lat, lon, direction, distance));
     }
 
     logCompilationTime() {
-        this.geoModule.RFDFGeo.logCompilationTime();
+        this.fixModule.RFDFGeo.logCompilationTime();
     }
 
     logVersion() {
-        this.geoModule.RFDFGeo.logVersion();
+        this.fixModule.RFDFGeo.logVersion();
     }
 
     logCommitHash() {
-        this.geoModule.RFDFGeo.logCommitHash();
+        this.fixModule.RFDFGeo.logCommitHash();
     }
 
     // getCommitHash() {
@@ -149,8 +150,8 @@ function loadGeoFix(config) {
             onRuntimeInitialized: function () {
                 console.log('WASM runtime initialized');
             }
-        }).then(geoModule => {
-            resolve(new GeoFix(config, geoModule));
+        }).then(fixModule => {
+            resolve(new GeoFix(config, fixModule));
         })
     })
 }

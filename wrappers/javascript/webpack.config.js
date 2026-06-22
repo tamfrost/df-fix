@@ -5,18 +5,19 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 
 const config = {
     entry: {
-        "geofix": './index.js',
+        "dffix": './index.js',
         "index": './src/index.js',
         // "test": './src/packagetest.js'
     },
     mode: 'production',
     output: {
-        filename: pathData => {
-            if (pathData.chunk.name === 'geofix') return '../publish/[name].min.js'
-            if (pathData.chunk.name === 'index') return '[name].min.js'
-            if (pathData.chunk.name === 'test') return '[name].min.js'
-        },
-        library: 'geofix',
+        // filename: pathData => {
+        //     if (pathData.chunk.name === 'dffix') return '../publish/[name].min.js'
+        //     if (pathData.chunk.name === 'index') return '[name].min.js'
+        //     if (pathData.chunk.name === 'test') return '[name].min.js'
+        // },
+        path: path.join(__dirname, '../../public/demo'),
+        library: 'dffix',
         libraryTarget: 'umd',
         globalObject: 'this'
     },

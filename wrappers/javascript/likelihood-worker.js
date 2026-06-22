@@ -1,4 +1,5 @@
-const moduleGenerator = require('./lib/libgeofix_javascript');
+// const moduleGenerator = require('./lib/libgeofix_javascript');
+const moduleGenerator = require('./lib/fix');
 const d3 = require("d3");
 // import * as d3array from "d3-array";
 // import * as d3interpolate from "d3-interpolate";
@@ -8,10 +9,10 @@ export class LHCalculator {
 
     constructor() {
         return new Promise(resolve => {
-            moduleGenerator().then(geoModule => {
-                console.log('module:', geoModule);
-                this.geoModule = geoModule;
-                // this.rfdfGeo = new geoModule.RFDFGeo(config.silent ? 0 : 1);
+            moduleGenerator().then(fixModule => {
+                console.log('module:', fixModule);
+                this.fixModule = fixModule;
+                // this.rfdfGeo = new fixModule.RFDFGeo(config.silent ? 0 : 1);
                 resolve(this);
             })
         });
@@ -20,9 +21,9 @@ export class LHCalculator {
     calculateLikelihood(jsonInput) {
         return new Promise((resolve, reject) => {
             self.calculateLikelihoodResolver = resolve;
-            const bufferAddr = this.geoModule._malloc(jsonInput.length + 1);
-            this.geoModule.stringToUTF8(jsonInput, bufferAddr, jsonInput.length + 1);
-            this.geoModule.calculateLikelihood(bufferAddr);
+            const bufferAddr = this.fixModule._malloc(jsonInput.length + 1);
+            this.fixModule.stringToUTF8(jsonInput, bufferAddr, jsonInput.length + 1);
+            this.fixModule.calculateLikelihood(bufferAddr);
         })
     }
 

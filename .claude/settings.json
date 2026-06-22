@@ -3,7 +3,15 @@
     "allow": [
       "Read(//c/Users/johlun/Desktop/df-lob/**)",
       "Bash(docker compose *)",
-      "Bash(curl -s http://localhost:8080/)"
+      "Bash(curl -s http://localhost:8080/)",
+      "Bash(netstat -tlnp)",
+      "Bash(docker exec *)",
+      "Bash(curl -sv http://localhost:8080/demo/index.html)",
+      "Bash(curl -sv http://localhost:8080/)",
+      "Bash(curl -sv http://localhost:8080/fix.js)",
+      "Bash(curl -sv http://localhost:8080/demo/index.js)",
+      "Bash(curl -sv http://localhost:8080/demo/dffix.js)",
+      "Bash(curl -s http://localhost:8080/demo/index.js)"
     ]
   }
 }

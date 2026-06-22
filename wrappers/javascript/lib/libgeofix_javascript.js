@@ -1,4 +1,4 @@
-var geoModule = (() => {
+var fixModule = (() => {
   var _scriptName = typeof document != 'undefined' ? document.currentScript?.src : undefined;
   if (typeof __filename != 'undefined') _scriptName = _scriptName || __filename;
   return (
@@ -13,9 +13,9 @@ var Module=moduleArg;var readyPromiseResolve,readyPromiseReject;var readyPromise
 );
 })();
 if (typeof exports === 'object' && typeof module === 'object') {
-  module.exports = geoModule;
+  module.exports = fixModule;
   // This default export looks redundant, but it allows TS to import this
   // commonjs style module.
-  module.exports.default = geoModule;
+  module.exports.default = fixModule;
 } else if (typeof define === 'function' && define['amd'])
-  define([], () => geoModule);
+  define([], () => fixModule);

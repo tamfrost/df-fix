@@ -7,6 +7,9 @@ WORKDIR /app
 RUN mkdir -p /usr/local/include/nlohmann && \
     cp -r /usr/include/nlohmann/. /usr/local/include/nlohmann/
 
+# Disable SSL verification for git (corporate SSL inspection proxy)
+RUN git config --global http.sslVerify false
+
 # Build GeographicLib for WASM so find_library(Geographic) works under emcmake
 WORKDIR /tmp/geographiclib
 RUN git clone --depth=1 --branch r2.3 \
@@ -33,8 +36,32 @@ RUN rm -rf build && mkdir -p build && \
     emmake make -j$(nproc)
 # Output: /app/wrappers/wasm/build/fix.js  (SINGLE_FILE=1, no separate .wasm)
 
+# ── JS/webpack build ──────────────────────────────────────────────────────────
+FROM node:22-alpine AS js-builder
+
+# Disable SSL verification for corporate SSL inspection proxy
+RUN npm config set strict-ssl false
+
+WORKDIR /app/wrappers/javascript
+
+# Install dependencies (separate layer for caching)
+COPY wrappers/javascript/package.json wrappers/javascript/package-lock.json ./
+RUN npm ci --ignore-scripts
+
+# Copy source files
+COPY wrappers/javascript/ ./
+
+# Use freshly built WASM bundle
+COPY --from=wasm-builder /app/wrappers/wasm/build/fix.js ./lib/fix.js
+
+RUN npm run build
+# Output: /app/public/demo/ (path.join(__dirname, '../../public/demo'))
+
 # ── Native build ──────────────────────────────────────────────────────────────
 FROM alpine:3.18 AS builder
+
+# Switch repos to HTTP (corporate SSL inspection proxy)
+RUN sed -i 's|https://|http://|g' /etc/apk/repositories
 
 RUN apk add --no-cache \
     cmake make g++ gcc git \
@@ -42,6 +69,9 @@ RUN apk add --no-cache \
     eigen-dev \
     libstdc++-dev \
     nlohmann-json
+
+# Disable SSL verification for git (corporate SSL inspection proxy)
+RUN git config --global http.sslVerify false
 
 # GeographicLib (static)
 WORKDIR /tmp/geographiclib
@@ -92,6 +122,9 @@ COPY --from=builder /app/public /public
 
 # WASM single-file bundle served at GET /api/v1/fix.js
 COPY --from=wasm-builder /app/wrappers/wasm/build/fix.js /public/fix.js
+
+# Webpack demo bundle
+COPY --from=js-builder /app/public/demo /public/demo
 
 EXPOSE 8080
 ENTRYPOINT ["/df-fix-api"]

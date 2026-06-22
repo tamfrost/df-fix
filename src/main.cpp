@@ -80,14 +80,24 @@ int main() {
         }
     });
 
-    // All other paths → /public/<path>, defaulting / → index.html
-    CROW_CATCHALL_ROUTE(app)
-    ([](const crow::request& req) -> crow::response {
-        std::string p = req.url;
-        if (p.empty() || p == "/") p = "/index.html";
-        std::string content = read_file("/public" + p);
+    // Root → index.html
+    CROW_ROUTE(app, "/")
+    ([]() -> crow::response {
+        std::string content = read_file("/public/index.html");
         if (content.empty()) return crow::response(404);
-        crow::response res(content);
+        crow::response res(200, content);
+        res.set_header("Content-Type", "text/html");
+        return res;
+    });
+
+    // All other paths → /public/<path>
+    CROW_ROUTE(app, "/<path>")
+    ([](const std::string& path) -> crow::response {
+        std::string p = path;
+        if (p.empty() || p.back() == '/') p += "index.html";
+        std::string content = read_file("/public/" + p);
+        if (content.empty()) return crow::response(404);
+        crow::response res(200, content);
         res.set_header("Content-Type", mime_type(p));
         return res;
     });
